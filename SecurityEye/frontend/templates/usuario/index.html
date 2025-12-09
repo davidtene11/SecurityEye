@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel del Usuario</title>
+
+<!-- ⭐ AGREGAR ESTA LÍNEA -->
+<script src="../../config.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<link rel="stylesheet" href="../../static/css/main.css">
+
+<style>
+    /* ⭐ AGREGAR ESTO: Estilo para debug info */
+    .debug-info {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        font-size: 0.7rem;
+        color: #999;
+        background: #222;
+        padding: 8px;
+        border-radius: 5px;
+        max-width: 200px;
+        text-align: right;
+        word-break: break-all;
+        z-index: 10000;
+    }
+</style>
+
+</head>
+<body>
+
+<!-- ⭐ AGREGAR ESTE BLOQUE -->
+<div class="debug-info">
+    <div>Ambiente: <span id="ambienteDebug">-</span></div>
+    <div>API: <span id="apiUrlDebug" style="color: #0f0;">-</span></div>
+</div>
+
+<nav class="navbar navbar-global d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-person-workspace fs-3 me-2 text-primary"></i>
+        <span class="brand-text">Panel del Usuario</span>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <span id="userName" class="text-muted fw-bold d-none d-md-block">Cargando...</span>
+        <button class="btn-logout btn-sm" onclick="cerrarSesion()">
+            Cerrar sesión
+        </button>
+    </div>
+</nav>
+
+<div class="container py-4 mb-5">
+
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Mis Resultados</h2>
+        <p class="text-muted">Resumen de tus sesiones de fatiga visual</p>
+    </div>
+
+    <div id="emptyState" class="dashboard-box mt-5 text-center py-5">
+        <i class="bi bi-clipboard-data text-muted" style="font-size: 4rem;"></i>
+        <h3 class="fw-bold mt-3 text-secondary">Aún no has realizado ninguna sesión</h3>
+        <p class="text-muted mb-4">Completa tu primera evaluación para ver tus estadísticas aquí.</p>
+        <div class="center-container">
+            <a href="medicion_fatiga.html?tipo=inicial" class="text-decoration-none">
+                <button class="btn-actividades">Comenzar Evaluación Inicial</button>
+            </a>
+        </div>
+    </div>
+
+    <div id="dashboardContent">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="metric-card card-warning text-center">
+                    <p class="text-muted mb-1 fw-semibold">Promedio Fatiga Inicial</p>
+                    <h2 class="fw-bold fs-1 text-admin-warning" id="avgIni">--%</h2>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card card-primary text-center">
+                    <p class="text-muted mb-1 fw-semibold">Promedio Fatiga Final</p>
+                    <h2 class="fw-bold fs-1 text-admin-primary" id="avgFin">--%</h2>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card card-success text-center">
+                    <p class="text-muted mb-1 fw-semibold">Promedio Reducción</p>
+                    <h2 class="fw-bold fs-1 text-success" id="avgRed">--%</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-box mt-4">
+            <h4 class="fw-bold mb-3">Historial de Sesiones</h4>
+            <div class="table-responsive">
+                <table class="table table-hover text-center align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Fatiga Inicial</th>
+                            <th>Fatiga Final</th>
+                            <th>Reducción</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorial">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="center-container mt-5 text-center">
+            <a href="medicion_fatiga.html?tipo=inicial" class="text-decoration-none">
+                <button class="btn-actividades">Iniciar Nueva Sesión</button>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    © 2025 - Sistema de Monitoreo de Fatiga Visual
+</footer>
+
+<div class="modal fade" id="detalleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-graph-up me-2"></i>Análisis Detallado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted text-uppercase small mb-3">
+                            <i class="bi bi-eye-slash me-2"></i>PERCLOS (% Ojos Cerrados)
+                        </h6>
+                        <div style="height: 250px;">
+                            <canvas id="modalChartPerclos"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted text-uppercase small mb-3">
+                            <i class="bi bi-lightning-charge me-2"></i>Frecuencia de Parpadeo
+                        </h6>
+                        <div style="height: 250px;">
+                            <canvas id="modalChartParpadeos"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <h6 class="text-muted text-uppercase small mb-3">
+                            <i class="bi bi-clipboard-data me-2"></i>Métricas Comparativas
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <small class="d-block text-muted mb-2"><i class="bi bi-emoji-dizzy"></i> Bostezos</small>
+                                    <div class="d-flex justify-content-around align-items-center">
+                                        <span class="metric-badge bg-warning text-dark" id="modBostIni">0</span>
+                                        <i class="bi bi-arrow-right text-muted"></i>
+                                        <span class="metric-badge bg-primary text-white" id="modBostFin">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <small class="d-block text-muted mb-2"><i class="bi bi-moon-stars"></i> KSS</small>
+                                    <div class="d-flex justify-content-around align-items-center">
+                                        <span class="metric-badge bg-warning text-dark" id="modKssIni">0</span>
+                                        <i class="bi bi-arrow-right text-muted"></i>
+                                        <span class="metric-badge bg-primary text-white" id="modKssFin">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <small class="d-block text-muted mb-2"><i class="bi bi-speedometer2"></i> Vel. Ocular</small>
+                                    <div class="d-flex justify-content-around align-items-center">
+                                        <span class="metric-badge bg-warning text-dark" id="modVelIni">0</span>
+                                        <i class="bi bi-arrow-right text-muted"></i>
+                                        <span class="metric-badge bg-primary text-white" id="modVelFin">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <small class="d-block text-muted mb-2"><i class="bi bi-heart-pulse"></i> Estado</small>
+                                    <span class="metric-badge" id="modEstado" style="font-size: 0.9rem;">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../../static/js/session.js"></script>
+<script src="../../static/js/user.js"></script>
+
+
+<script>
+    // ========================================================
+    // 1. Validar el usuario desde LOCALSTORAGE (única fuente)
+    // ========================================================
+    function obtenerUsuario() {
+        const usuarioStr = localStorage.getItem("usuario");
+        if (!usuarioStr) {
+            window.location.href = "../login.html";
+            throw new Error("Usuario no autenticado");
+        }
+        return JSON.parse(usuarioStr);
+    }
+
+    let chartInstance = null;
+    let chartPerclos = null;
+    let chartParpadeos = null;
+
+    // ========================================================
+    // 2. Cargar datos al iniciar
+    // ========================================================
+    document.addEventListener("DOMContentLoaded", async () => {
+        // ⭐ AGREGAR: Verificar que API_URL esté configurada
+        if (!window.API_URL) {
+            console.error('API_URL no está configurada');
+            alert('Error: Configuración de API no encontrada. Recarga la página.');
+            return;
+        }
+
+        const usuario = obtenerUsuario();
+
+        document.getElementById('userName').innerText =
+            `${usuario.nombre} ${usuario.apellido}`;
+
+        try {
+            // ⭐ CAMBIAR: De localhost:8000 a window.API_URL
+            const historyUrl = `${window.API_URL}/get-user-history`;
+            console.log('Cargando historial desde:', historyUrl);
+
+            const response = await fetch(historyUrl, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ usuario_id: usuario.id })
+            });
+
+            if (!response.ok) throw new Error("Error en servidor");
+
+            const data = await response.json();
+
+            if (data.empty) {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('dashboardContent').style.display = 'none';
+            } else {
+                document.getElementById('emptyState').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+                llenarDashboard(data);
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("No se pudo cargar el historial: " + error.message);
+        }
+    });
+
+    // ========================================================
+    // 3. Llenar dashboard
+    // ========================================================
+    function llenarDashboard(data) {
+        document.getElementById('avgIni').innerText = data.promedios.inicial + "%";
+        document.getElementById('avgFin').innerText = data.promedios.final + "%";
+        document.getElementById('avgRed').innerText = data.promedios.reduccion + "%";
+
+        const tbody = document.getElementById('tablaHistorial');
+        tbody.innerHTML = "";
+
+        data.historial.forEach(sesion => {
+            const reduccion = sesion.porcentaje_reduccion;
+            const esMejora = reduccion > 0;
+            const claseColor = esMejora ? "text-success" : "text-danger";
+            const signo = esMejora ? "-" : "+";
+
+            const row = `
+                <tr>
+                    <td>${sesion.fecha}</td>
+                    <td><span class="badge bg-warning text-dark rounded-pill px-3">${sesion.inicial}%</span></td>
+                    <td><span class="badge bg-primary rounded-pill px-3">${sesion.final}%</span></td>
+                    <td class="${claseColor} fw-bold">${signo}${Math.abs(reduccion)}%</td>
+                    <td>
+                        <button class="btn btn-outline-primary btn-sm" onclick="abrirModal(${sesion.sesion_id})">
+                            <i class="bi bi-eye me-1"></i>Ver
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // ========================================================
+    // 4. Abrir modal con detalles
+    // ========================================================
+    async function abrirModal(sesionId) {
+        // ⭐ AGREGAR: Verificar API_URL
+        if (!window.API_URL) {
+            alert('Error: API no configurada');
+            return;
+        }
+
+        try {
+            // ⭐ CAMBIAR: De localhost:8000 a window.API_URL
+            const detailsUrl = `${window.API_URL}/get-session-details`;
+            console.log('Cargando detalles desde:', detailsUrl);
+
+            const response = await fetch(detailsUrl, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ sesion_id: sesionId })
+            });
+
+            const datos = await response.json();
+
+            if (!datos.INICIAL || !datos.FINAL) {
+                alert("Datos incompletos en esta sesión.");
+                return;
+            }
+
+            // Llenar badges
+            document.getElementById('modBostIni').innerText = datos.INICIAL.num_bostezos;
+            document.getElementById('modBostFin').innerText = datos.FINAL.num_bostezos;
+            document.getElementById('modKssIni').innerText = datos.INICIAL.nivel_subjetivo;
+            document.getElementById('modKssFin').innerText = datos.FINAL.nivel_subjetivo;
+            document.getElementById('modVelIni').innerText = parseFloat(datos.INICIAL.velocidad_ocular).toFixed(1);
+            document.getElementById('modVelFin').innerText = parseFloat(datos.FINAL.velocidad_ocular).toFixed(1);
+
+            const estadoBadge = document.getElementById('modEstado');
+            const esFatiga = datos.FINAL.estado_fatiga.toLowerCase().includes('fatiga');
+
+            estadoBadge.innerText = esFatiga ? "FATIGA DETECTADA" : "ESTADO NORMAL";
+            estadoBadge.className = esFatiga
+                ? "metric-badge bg-danger text-white"
+                : "metric-badge bg-success text-white";
+
+            // Gráfico PERCLOS
+            const colorInicial = "#FFC300";
+            const colorFinal = "#4DA3FF";
+
+            const ctxPerclos = document.getElementById('modalChartPerclos').getContext('2d');
+            if (chartPerclos) chartPerclos.destroy();
+            chartPerclos = new Chart(ctxPerclos, {
+                type: 'bar',
+                data: {
+                    labels: ['Inicial', 'Final'],
+                    datasets: [{
+                        data: [datos.INICIAL.perclos, datos.FINAL.perclos],
+                        backgroundColor: [colorInicial, colorFinal],
+                        borderRadius: 5
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            // Gráfico Parpadeos
+            const ctxParp = document.getElementById('modalChartParpadeos').getContext('2d');
+            if (chartParpadeos) chartParpadeos.destroy();
+            chartParpadeos = new Chart(ctxParp, {
+                type: 'line',
+                data: {
+                    labels: ['Inicial', 'Final'],
+                    datasets: [{
+                        data: [datos.INICIAL.parpadeos, datos.FINAL.parpadeos],
+                        borderColor: colorFinal,
+                        fill: true,
+                        backgroundColor: "rgba(77,163,255,0.2)",
+                        tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            new bootstrap.Modal(document.getElementById('detalleModal')).show();
+
+        } catch (e) {
+            console.error(e);
+            alert("Error al cargar detalles de la sesión: " + e.message);
+        }
+    }
+
+    // ========================================================
+    // 5. Cerrar sesión
+    // ========================================================
+    function cerrarSesion() {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "../login.html";
+    }
+
+    // ⭐ AGREGAR ESTO: Script de debug
+    window.addEventListener('load', function() {
+        if (document.getElementById('ambienteDebug')) {
+            document.getElementById('ambienteDebug').textContent = window.AMBIENTE || 'desconocido';
+        }
+        if (document.getElementById('apiUrlDebug')) {
+            document.getElementById('apiUrlDebug').textContent = window.API_URL || 'no configurada';
+        }
+    });
+</script>
+
+</body>
+</html>

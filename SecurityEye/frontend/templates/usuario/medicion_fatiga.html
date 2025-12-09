@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Evaluación de Fatiga Visual</title>
+
+  <!-- ⭐ AGREGAR ESTA LÍNEA -->
+  <script src="../../config.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <link rel="stylesheet" href="../../static/css/medicion_fatiga.css" />
+
+  <style>
+    /* ⭐ AGREGAR ESTO: Estilo para debug info */
+    .debug-info {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      font-size: 0.7rem;
+      color: #999;
+      background: #222;
+      padding: 8px;
+      border-radius: 5px;
+      max-width: 200px;
+      text-align: right;
+      word-break: break-all;
+      z-index: 10000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ⭐ AGREGAR ESTE BLOQUE -->
+  <div class="debug-info">
+    <div>Ambiente: <span id="ambienteDebug">-</span></div>
+    <div>API: <span id="apiUrlDebug" style="color: #0f0;">-</span></div>
+  </div>
+
+  <main class="main-container">
+    <h2 class="title" id="pageTitle">Reconocimiento Inicial</h2>
+
+    <div class="video-card">
+      <video id="video" playsinline autoplay muted style="display:none;"></video>
+      <canvas id="output_canvas" width="640" height="480"></canvas>
+      <div id="statusOverlay">Esperando cámara...</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-label">Parpadeos</span>
+        <span id="blinkCount" class="stat-value">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Bostezos</span>
+        <span id="yawnCount" class="stat-value">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Tiempo</span>
+        <span id="timerCount" class="stat-value">--</span>
+      </div>
+    </div>
+
+    <p class="info">
+      El sistema calibrará tus ojos durante 10 segundos y luego medirá tu fatiga por 60 segundos. 
+      Mantén una postura natural.
+    </p>
+
+    <div class="controls">
+      <button id="startBtn" class="btn btn-primary">Iniciar Cámara</button>
+      <button id="stopBtn" class="btn btn-ghost" disabled>Detener</button>
+    </div>
+  </main>
+
+  <div id="subjectiveModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Validación Personal</h3>
+      <p style="color:var(--muted); margin-bottom:20px; font-size: 0.9rem;">
+        Prueba finalizada. ¿Qué tan somnoliento te sientes?
+      </p>
+      
+      <select id="kssSelect">
+        <option value="1">1. Muy Alerta</option>
+        <option value="3">3. Alerta</option>
+        <option value="5">5. Ni alerta ni somnoliento</option>
+        <option value="7">7. Somnoliento</option>
+        <option value="9">9. Muy somnoliento (luchando)</option>
+      </select>
+
+      <button class="btn btn-primary" style="width:100%" onclick="guardarYContinuar()">
+        Guardar Resultados
+      </button>
+    </div>
+  </div>
+
+  <div id="resultModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Resultado del Análisis</h3>
+      <div style="margin: 20px 0;">
+        <p id="resultText" style="font-weight:700; font-size:1.3rem; margin-bottom:8px;">Diagnóstico: --</p>
+        <p id="resultReasons" style="color:var(--muted); font-size:0.9rem;">Procesando datos...</p>
+      </div>
+      
+      <div style="display:flex; justify-content: center;">
+        <a id="continueBtn" class="btn btn-primary" href="#" style="background: var(--success); color: white; border: none; min-width: 160px;">
+          Continuar
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../static/js/medicion.js"></script>
+
+  <!-- ⭐ AGREGAR ESTE SCRIPT -->
+  <script>
+    window.addEventListener('load', function() {
+      if (document.getElementById('ambienteDebug')) {
+        document.getElementById('ambienteDebug').textContent = window.AMBIENTE || 'desconocido';
+      }
+      if (document.getElementById('apiUrlDebug')) {
+        document.getElementById('apiUrlDebug').textContent = window.API_URL || 'no configurada';
+      }
+    });
+  </script>
+</body>
+</html>
