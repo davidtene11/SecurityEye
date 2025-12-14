@@ -611,6 +611,20 @@ document.addEventListener('DOMContentLoaded', () => {
 // 8. CARGAR CONTENIDO (VIDEO/PDF)
 // ==========================================
 
+// Helper: Convertir URL de YouTube a formato embed
+function convertirYouTubeUrl(url) {
+    // Detectar URLs de YouTube
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/;
+    const match = url.match(youtubeRegex);
+    
+    if (match && match[1]) {
+        const videoId = match[1];
+        return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    return url; // Si no es YouTube, devolver URL original
+}
+
 function cargarContenido(tipo, url, nombre) {
     console.log('Cargando contenido:', { tipo, url, nombre });
     contentContainer.innerHTML = '';
@@ -622,14 +636,46 @@ function cargarContenido(tipo, url, nombre) {
     if (tipo === 'video') {
         if (hasUrl) {
             console.log('Creando elemento video con URL:', url);
-            const videoEl = document.createElement('video');
-            videoEl.src = url;
-            videoEl.controls = true;
-            videoEl.autoplay = false;
-            videoEl.style.width = '100%';
-            videoEl.style.height = '100%';
-            videoEl.style.objectFit = 'contain';
-            contentContainer.appendChild(videoEl);
+            
+            // Detectar si es URL de YouTube o externa
+            const esYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+            const esUrlExterna = url.startsWith('http://') || url.startsWith('https://');
+            const esArchivoLocal = url.startsWith('blob:');
+            
+            if (esYouTube) {
+                // YouTube requiere iframe con URL embed
+                const embedUrl = convertirYouTubeUrl(url);
+                console.log('URL de YouTube convertida a embed:', embedUrl);
+                const iframe = document.createElement('iframe');
+                iframe.src = embedUrl;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                iframe.allowFullscreen = true;
+                contentContainer.appendChild(iframe);
+            } else if (esUrlExterna && !esArchivoLocal) {
+                // Otras URLs externas también usar iframe por seguridad
+                console.log('URL externa, usando iframe');
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.allow = 'autoplay';
+                contentContainer.appendChild(iframe);
+            } else {
+                // Archivos locales (blob:) usar <video>
+                console.log('Archivo local, usando elemento video');
+                const videoEl = document.createElement('video');
+                videoEl.src = url;
+                videoEl.controls = true;
+                videoEl.autoplay = false;
+                videoEl.style.width = '100%';
+                videoEl.style.height = '100%';
+                videoEl.style.objectFit = 'contain';
+                contentContainer.appendChild(videoEl);
+            }
         } else {
             console.warn('No se proporcionó URL para el video');
             contentContainer.innerHTML = `<div class="text-center text-white p-4">

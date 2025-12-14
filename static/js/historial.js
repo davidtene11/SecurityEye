@@ -170,7 +170,20 @@ async function abrirDetalles(sesionId) {
         const modalContent = document.getElementById('modalContent');
 
         // Construir contenido del modal
-        const momentos = sesion.momentos_fatiga ? JSON.parse(sesion.momentos_fatiga) : [];
+        // momentos_fatiga ya viene como objeto desde el backend (JSONB)
+        let momentos = [];
+        if (sesion.momentos_fatiga) {
+            if (typeof sesion.momentos_fatiga === 'string') {
+                try {
+                    momentos = JSON.parse(sesion.momentos_fatiga);
+                } catch (e) {
+                    console.warn('Error parseando momentos_fatiga:', e);
+                    momentos = [];
+                }
+            } else if (Array.isArray(sesion.momentos_fatiga)) {
+                momentos = sesion.momentos_fatiga;
+            }
+        }
         const fecha = new Date(sesion.fecha_inicio).toLocaleString('es-ES');
         const actividad = sesion.tipo_actividad === 'pdf' ? 'PDF de lectura' : 'Video educativo';
         const estado = sesion.es_fatiga 
