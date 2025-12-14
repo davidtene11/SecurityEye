@@ -502,12 +502,12 @@ def get_sesion_details(sesion_id: int):
                 s.id, s.usuario_id, s.tipo_actividad, s.total_segundos, s.alertas, 
                 s.kss_final, s.es_fatiga, s.fecha_inicio, s.fecha_fin,
                 m.perclos, m.velocidad_ocular, m.num_bostezos, m.blink_rate_min,
-                m.max_sin_parpadeo, m.momentos_fatiga,
+                m.parpadeos, m.max_sin_parpadeo, m.momentos_fatiga,
                 dia.diagnostico_json
             FROM sesiones s
             LEFT JOIN LATERAL (
                 SELECT perclos, velocidad_ocular, num_bostezos, blink_rate_min,
-                       max_sin_parpadeo, momentos_fatiga
+                       parpadeos, max_sin_parpadeo, momentos_fatiga
                 FROM mediciones m2
                 WHERE m2.sesion_id = s.id
                 ORDER BY m2.fecha DESC
