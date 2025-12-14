@@ -1,5 +1,5 @@
 // =====================================================
-// DETAILS.JS – DETALLE DE UNA SESIÓN
+// DETAILS.JS – DETALLE DE UNA SESIÓN (MODELO CONTINUO)
 // =====================================================
 
 // Obtener ID desde la URL
@@ -16,11 +16,7 @@ if (!sesionId) {
 // =====================================================
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        const resp = await fetch("http://localhost:8000/get-session-details", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sesion_id: parseInt(sesionId) })
-        });
+        const resp = await fetch(`http://localhost:8000/sesiones/${sesionId}`);
 
         if (!resp.ok) {
             throw new Error("Error al obtener los datos de la sesión");
@@ -28,13 +24,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const datos = await resp.json();
 
-        if (!datos.INICIAL || !datos.FINAL) {
-            alert("Los datos de esta sesión están incompletos.");
+        if (datos.error) {
+            alert("Sesión no encontrada.");
             return;
         }
 
+        // Renderizar información general
+        renderInfoGeneral(datos);
+        
+        // Renderizar gráficos de métricas continuas
         renderGraficos(datos);
-        renderEstado(datos.FINAL.estado_fatiga);
+        
+        // Renderizar estado de fatiga
+        renderEstado(datos.es_fatiga);
+
+        // Renderizar timeline de alertas (si existe momentos_fatiga)
+        if (datos.momentos_fatiga) {
+            renderTimelineAlertas(datos.momentos_fatiga);
+        }
 
     } catch (err) {
         console.error(err);
@@ -43,21 +50,35 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // =====================================================
-// Gráficos de detalle
+// Información general de la sesión
+// =====================================================
+function renderInfoGeneral(datos) {
+    const duracion = datos.total_segundos 
+        ? `${Math.floor(datos.total_segundos / 60)}:${(datos.total_segundos % 60).toString().padStart(2, '0')}` 
+        : 'N/A';
+    
+    document.getElementById('infoActividad').textContent = datos.tipo_actividad || 'N/A';
+    document.getElementById('infoDuracion').textContent = duracion;
+    document.getElementById('infoAlertas').textContent = datos.alertas || 0;
+    document.getElementById('infoKSS').textContent = datos.kss_final || 'N/A';
+}
+
+// =====================================================
+// Gráficos de métricas continuas
 // =====================================================
 function renderGraficos(d) {
-    const colorInicial = "#FFC300";
-    const colorFinal = "#4DA3FF";
+    const colorPrincipal = "#3A7D8E";
+    const colorAlerta = "#FF6B6B";
 
-    // PERCLOS
+    // PERCLOS (fatiga ocular)
     new Chart(document.getElementById("chartPerclos"), {
         type: "bar",
         data: {
-            labels: ["Inicial", "Final"],
+            labels: ["PERCLOS"],
             datasets: [{
                 label: "PERCLOS (%)",
-                data: [d.INICIAL.perclos, d.FINAL.perclos],
-                backgroundColor: [colorInicial, colorFinal],
+                data: [d.perclos || 0],
+                backgroundColor: d.perclos > 15 ? colorAlerta : colorPrincipal,
                 borderRadius: 8
             }]
         },
@@ -75,6 +96,7 @@ function renderGraficos(d) {
             scales: {
                 y: {
                     beginAtZero: true,
+                    max: 100,
                     ticks: {
                         callback: (value) => value + '%'
                     }
@@ -83,20 +105,16 @@ function renderGraficos(d) {
         }
     });
 
-    // PARPADEOS
+    // FRECUENCIA DE PARPADEO
     new Chart(document.getElementById("chartParpadeos"), {
-        type: "line",
+        type: "bar",
         data: {
-            labels: ["Inicial", "Final"],
+            labels: ["Blink Rate"],
             datasets: [{
-                label: "Parpadeos",
-                data: [d.INICIAL.parpadeos, d.FINAL.parpadeos],
-                borderColor: colorFinal,
-                backgroundColor: "rgba(77,163,255,0.2)",
-                fill: true,
-                tension: 0.3,
-                pointRadius: 6,
-                pointHoverRadius: 8
+                label: "Parpadeos/min",
+                data: [d.blink_rate_min || 0],
+                backgroundColor: colorPrincipal,
+                borderRadius: 8
             }]
         },
         options: {
@@ -111,18 +129,14 @@ function renderGraficos(d) {
 
     // VELOCIDAD OCULAR
     new Chart(document.getElementById("chartVelocidad"), {
-        type: "line",
+        type: "bar",
         data: {
-            labels: ["Inicial", "Final"],
+            labels: ["Velocidad Ocular"],
             datasets: [{
-                label: "Velocidad Ocular",
-                data: [d.INICIAL.velocidad_ocular, d.FINAL.velocidad_ocular],
-                borderColor: "#FF9800",
-                backgroundColor: "rgba(255,152,0,0.2)",
-                fill: true,
-                tension: 0.3,
-                pointRadius: 6,
-                pointHoverRadius: 8
+                label: "Velocidad",
+                data: [d.velocidad_ocular || 0],
+                backgroundColor: "#A3D9D5",
+                borderRadius: 8
             }]
         },
         options: {
@@ -139,11 +153,11 @@ function renderGraficos(d) {
     new Chart(document.getElementById("chartKSS"), {
         type: "bar",
         data: {
-            labels: ["Inicial", "Final"],
+            labels: ["KSS"],
             datasets: [{
                 label: "KSS (1-9)",
-                data: [d.INICIAL.nivel_subjetivo, d.FINAL.nivel_subjetivo],
-                backgroundColor: [colorInicial, colorFinal],
+                data: [d.kss_final || 0],
+                backgroundColor: d.kss_final >= 7 ? colorAlerta : colorPrincipal,
                 borderRadius: 8
             }]
         },
@@ -165,16 +179,51 @@ function renderGraficos(d) {
 }
 
 // =====================================================
-// Mensaje de estado final
+// Estado de fatiga
 // =====================================================
-function renderEstado(estado) {
+function renderEstado(esFatiga) {
     const box = document.getElementById("estadoFatiga");
 
-    if (estado && estado.toUpperCase().includes("FATIGA")) {
+    if (esFatiga) {
         box.className = "alert alert-danger";
-        box.innerHTML = '<strong><i class="fas fa-exclamation-triangle me-2"></i>Fatiga detectada</strong> en la medición final.';
+        box.innerHTML = '<strong><i class="fas fa-exclamation-triangle me-2"></i>Fatiga detectada</strong> durante la sesión de monitoreo.';
     } else {
         box.className = "alert alert-success";
-        box.innerHTML = '<strong><i class="fas fa-check-circle me-2"></i>Estado normal</strong> en la medición final.';
+        box.innerHTML = '<strong><i class="fas fa-check-circle me-2"></i>Estado normal</strong> - No se detectó fatiga significativa.';
     }
+}
+
+// =====================================================
+// Timeline de alertas
+// =====================================================
+function renderTimelineAlertas(momentos) {
+    const container = document.getElementById('timelineAlertas');
+    if (!container) return;
+
+    if (!momentos || momentos.length === 0) {
+        container.innerHTML = '<p class="text-muted">No se registraron alertas durante esta sesión.</p>';
+        return;
+    }
+
+    let html = '<div class="timeline">';
+    momentos.forEach((momento, index) => {
+        const minutos = Math.floor(momento.t / 60);
+        const segundos = momento.t % 60;
+        const tiempo = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+        
+        html += `
+            <div class="timeline-item">
+                <div class="timeline-badge bg-danger">
+                    <i class="fas fa-exclamation"></i>
+                </div>
+                <div class="timeline-content">
+                    <p class="mb-1"><strong>${tiempo}</strong></p>
+                    <p class="text-muted mb-0">${momento.reason || 'Fatiga detectada'}</p>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    container.innerHTML = html;
 }

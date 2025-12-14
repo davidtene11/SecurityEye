@@ -12,6 +12,8 @@ const totalEstudiantesEl = document.getElementById("totalEstudiantes");
 const fatigaInicialPromEl = document.getElementById("fatigaInicialProm");
 const reduccionPromEl = document.getElementById("reduccionProm");
 
+// NOTA: Sistema actualizado a monitoreo CONTINUO (no inicial/final)
+
 let graficoFatiga = null;
 let graficoReduccion = null;
 
@@ -41,26 +43,33 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // ========================================================
-//  Llenar tabla de usuarios
+//  Llenar tabla de usuarios (CONTINUO)
 // ========================================================
 function llenarTabla(sesiones) {
     tabla.innerHTML = "";
 
     sesiones.forEach((s, idx) => {
-        const color = s.porcentaje_reduccion > 0 ? "text-success" : "text-danger";
+        const fatigaStatus = s.es_fatiga 
+            ? '<span class="badge bg-danger">Fatiga</span>' 
+            : '<span class="badge bg-success">Normal</span>';
+        
+        const duracionMin = Math.floor(s.total_segundos / 60);
+        const duracionSeg = s.total_segundos % 60;
+        const duracion = `${String(duracionMin).padStart(2, '0')}:${String(duracionSeg).padStart(2, '0')}`;
 
         tabla.innerHTML += `
             <tr>
                 <td>${idx + 1}</td>
                 <td>${s.estudiante}</td>
                 <td>${s.fecha}</td>
-                <td>${s.inicial}%</td>
-                <td>${s.final}%</td>
-                <td class="${color} fw-bold">${s.porcentaje_reduccion}%</td>
+                <td>${s.tipo_actividad === 'pdf' ? 'PDF' : 'Video'}</td>
+                <td>${duracion}</td>
+                <td><span class="badge bg-warning text-dark">${s.alertas || 0}</span></td>
+                <td>${fatigaStatus}</td>
                 <td>
                     <button class="btn btn-outline-primary btn-sm"
                         onclick="verDetalle(${s.sesion_id})">
-                        <i class="fas fa-eye"></i> Ver
+                        <i class="bi bi-eye"></i> Ver
                     </button>
                 </td>
             </tr>
@@ -76,18 +85,22 @@ function verDetalle(id) {
 }
 
 // ========================================================
-//  Cálculo de métricas globales
+//  Cálculo de métricas globales (CONTINUO)
 // ========================================================
 function llenarMetricas(sesiones) {
     const estudiantesUnicos = new Set(sesiones.map(s => s.estudiante));
     totalEstudiantesEl.textContent = estudiantesUnicos.size;
 
-    const avgIni = promedio(sesiones.map(s => s.inicial));
-    const avgFin = promedio(sesiones.map(s => s.final));
-    const avgRed = promedio(sesiones.map(s => s.porcentaje_reduccion));
+    // Promedio de fatiga continua (PERCLOS)
+    const perclosValues = sesiones.filter(s => s.perclos !== null && s.perclos !== undefined)
+                                   .map(s => parseFloat(s.perclos));
+    const avgPerclos = promedio(perclosValues);
 
-    fatigaInicialPromEl.textContent = avgIni + "%";
-    reduccionPromEl.textContent = avgRed + "%";
+    // Promedio de alertas
+    const avgAlertas = promedio(sesiones.map(s => s.alertas || 0));
+
+    fatigaInicialPromEl.textContent = avgPerclos.toFixed(1) + "%";
+    reduccionPromEl.textContent = Math.round(avgAlertas);
 }
 
 function promedio(arr) {
@@ -96,15 +109,18 @@ function promedio(arr) {
 }
 
 // ========================================================
-//  Gráficos globales
+//  Gráficos globales (CONTINUO)
 // ========================================================
 function generarGraficos(sesiones) {
-    const promedioIni = promedio(sesiones.map(s => s.inicial));
-    const promedioFin = promedio(sesiones.map(s => s.final));
-    const etiquetasSesiones = sesiones.map((s, i) => `#${i+1} ${s.estudiante}`);
-    const reducciones = sesiones.map(s => s.porcentaje_reduccion);
+    const perclosValues = sesiones.filter(s => s.perclos !== null && s.perclos !== undefined)
+                                   .map(s => parseFloat(s.perclos));
+    const promedioPerclos = promedio(perclosValues);
 
-    // --- Gráfico de Barras ---
+    const etiquetasSesiones = sesiones.map((s, i) => `#${i+1} ${s.estudiante}`);
+    const alertasPerSesion = sesiones.map(s => s.alertas || 0);
+    const perclosPorSesion = sesiones.map(s => parseFloat(s.perclos || 0));
+
+    // --- Gráfico 1: Fatiga Continua (PERCLOS) ---
     const ctx1 = document.getElementById("graficoFatiga").getContext("2d");
 
     if (graficoFatiga) graficoFatiga.destroy();
@@ -112,22 +128,30 @@ function generarGraficos(sesiones) {
     graficoFatiga = new Chart(ctx1, {
         type: "bar",
         data: {
-            labels: ["Inicial", "Final"],
+            labels: ["Promedio de Fatiga"],
             datasets: [{
-                label: "Promedio (%)",
-                data: [promedioIni, promedioFin],
-                backgroundColor: ["#FFC300", "#4DA3FF"]
+                label: "PERCLOS (%)",
+                data: [promedioPerclos],
+                backgroundColor: ["#3A7D8E"]
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
+            scales: { 
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: (value) => value + "%"
+                    }
+                }
+            }
         }
     });
 
-    // --- Gráfico Reducción por sesión ---
+    // --- Gráfico 2: Alertas por sesión ---
     const ctx2 = document.getElementById("graficoReduccion").getContext("2d");
 
     if (graficoReduccion) graficoReduccion.destroy();
@@ -137,9 +161,9 @@ function generarGraficos(sesiones) {
         data: {
             labels: etiquetasSesiones,
             datasets: [{
-                label: "Reducción (%)",
-                data: reducciones,
-                backgroundColor: reducciones.map(val => val > 0 ? "#3FB27F" : "#E76F51")
+                label: "Alertas de Fatiga",
+                data: alertasPerSesion,
+                backgroundColor: alertasPerSesion.map(val => val > 0 ? "#E74C3C" : "#27AE60")
             }]
         },
         options: {
@@ -150,7 +174,7 @@ function generarGraficos(sesiones) {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: (value) => value + "%"
+                        stepSize: 1
                     }
                 }
             }

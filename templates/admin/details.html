@@ -21,6 +21,63 @@
         width: 100% !important;
         height: 100% !important;
     }
+
+    .metric-card {
+        background: rgba(255,255,255,0.95);
+        padding: 1.2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+
+    .metric-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #3A7D8E;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-badge {
+        position: absolute;
+        left: -30px;
+        top: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.7rem;
+    }
+
+    .timeline-content {
+        background: rgba(255,255,255,0.9);
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        border-left: 3px solid #FF6B6B;
+    }
 </style>
 
 </head>
@@ -49,7 +106,35 @@
 
     <div class="dashboard-box">
         <h3 class="fw-bold">Análisis Detallado</h3>
-        <p class="text-muted">Comparación de los parámetros medidos</p>
+        <p class="text-muted">Información de la sesión de monitoreo continuo</p>
+
+        <!-- Información General -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-label">Actividad</div>
+                    <div class="metric-value" id="infoActividad">-</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-label">Duración</div>
+                    <div class="metric-value" id="infoDuracion">-</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-label">Alertas</div>
+                    <div class="metric-value" id="infoAlertas">-</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-label">KSS Final</div>
+                    <div class="metric-value" id="infoKSS">-</div>
+                </div>
+            </div>
+        </div>
 
         <div class="row mt-4">
 
@@ -84,6 +169,12 @@
         </div>
 
         <div class="alert mt-4" id="estadoFatiga"></div>
+
+        <!-- Timeline de Alertas -->
+        <div class="mt-4">
+            <h6 class="text-muted mb-3 fw-bold">Timeline de Alertas</h6>
+            <div id="timelineAlertas"></div>
+        </div>
 
     </div>
 </main>

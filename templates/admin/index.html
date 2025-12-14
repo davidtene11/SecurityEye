@@ -60,15 +60,15 @@
 
         <div class="col-md-4">
             <div class="metric-card text-center">
-                <p class="text-muted mb-1 fw-semibold">Fatiga Inicial Promedio</p>
+                <p class="text-muted mb-1 fw-semibold">Fatiga Continua (PERCLOS)</p>
                 <h2 class="text-warning fw-bold" id="fatigaInicialProm">--%</h2>
             </div>
         </div>
 
         <div class="col-md-4">
             <div class="metric-card text-center">
-                <p class="text-muted mb-1 fw-semibold">Reducción Promedio</p>
-                <h2 class="text-success fw-bold" id="reduccionProm">--%</h2>
+                <p class="text-muted mb-1 fw-semibold">Promedio de Alertas</p>
+                <h2 class="text-danger fw-bold" id="reduccionProm">--</h2>
             </div>
         </div>
 
@@ -79,7 +79,7 @@
 
         <div class="col-md-6">
             <div class="dashboard-box h-100">
-                <h5 class="fw-bold mb-3">Fatiga Inicial vs Final (promedio)</h5>
+                <h5 class="fw-bold mb-3">Fatiga Continua (Promedio PERCLOS)</h5>
                 <div class="chart-container">
                     <canvas id="graficoFatiga"></canvas>
                 </div>
@@ -88,7 +88,7 @@
 
         <div class="col-md-6">
             <div class="dashboard-box h-100">
-                <h5 class="fw-bold mb-3">Reducción por sesión</h5>
+                <h5 class="fw-bold mb-3">Alertas por Sesión</h5>
                 <div class="chart-container">
                     <canvas id="graficoReduccion"></canvas>
                 </div>
@@ -108,9 +108,10 @@
                         <th>#</th>
                         <th>Estudiante</th>
                         <th>Fecha</th>
-                        <th>Fatiga Inicial</th>
-                        <th>Fatiga Final</th>
-                        <th>Reducción</th>
+                        <th>Actividad</th>
+                        <th>Duración</th>
+                        <th>Alertas</th>
+                        <th>Estado</th>
                         <th>Detalle</th>
                     </tr>
                 </thead>
