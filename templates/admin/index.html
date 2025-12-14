@@ -10,20 +10,38 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+<style>
+    .chart-container{
+        position:relative;
+        height:320px;
+    }
+    .chart-container canvas{
+        width:100% !important;
+        height:100% !important;
+    }
+</style>
+
 </head>
 
 <body class="d-flex flex-column min-vh-100">
 
+<div class="page-bg"></div>
+
+<script src="../../static/js/session.js"></script>
+<script>
+    protegerRuta("admin");
+</script>
+
 <nav class="navbar navbar-global d-flex justify-content-between align-items-center">
-    <div class="d-flex align-items-center">
+    <a class="d-flex align-items-center text-decoration-none" href="index.html">
         <span class="brand-icon">🛡️</span>
         <span class="brand-text">Panel Administrador</span>
-    </div>
+    </a>
 
     <button class="btn-logout" onclick="cerrarSesion()">Cerrar sesión</button>
 </nav>
 
-<div class="container mt-4 mb-5">
+<main class="container mt-4 mb-5">
 
     <div class="text-center mb-4">
         <h2 class="fw-bold">Dashboard General</h2>
@@ -60,16 +78,20 @@
     <div class="row g-4 mt-3">
 
         <div class="col-md-6">
-            <div class="dashboard-box">
-                <h5 class="fw-bold mb-3">Fatiga Inicial vs Final</h5>
-                <canvas id="graficoFatiga"></canvas>
+            <div class="dashboard-box h-100">
+                <h5 class="fw-bold mb-3">Fatiga Inicial vs Final (promedio)</h5>
+                <div class="chart-container">
+                    <canvas id="graficoFatiga"></canvas>
+                </div>
             </div>
         </div>
 
         <div class="col-md-6">
-            <div class="dashboard-box">
-                <h5 class="fw-bold mb-3">Métricas Visuales</h5>
-                <canvas id="graficoRadar"></canvas>
+            <div class="dashboard-box h-100">
+                <h5 class="fw-bold mb-3">Reducción por sesión</h5>
+                <div class="chart-container">
+                    <canvas id="graficoReduccion"></canvas>
+                </div>
             </div>
         </div>
 
@@ -83,6 +105,7 @@
             <table class="table table-hover align-middle text-center">
                 <thead class="table-light">
                     <tr>
+                        <th>#</th>
                         <th>Estudiante</th>
                         <th>Fecha</th>
                         <th>Fatiga Inicial</th>
@@ -97,7 +120,7 @@
         </div>
     </div>
 
-</div>
+</main>
 
 <footer class="mt-auto text-center py-3" style="background:#ffffff55;">
     © 2025 - Sistema de Monitoreo de Fatiga Visual

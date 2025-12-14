@@ -13,7 +13,7 @@ const fatigaInicialPromEl = document.getElementById("fatigaInicialProm");
 const reduccionPromEl = document.getElementById("reduccionProm");
 
 let graficoFatiga = null;
-let graficoRadar = null;
+let graficoReduccion = null;
 
 // ========================================================
 //  Cargar sesiones globales del backend
@@ -46,11 +46,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 function llenarTabla(sesiones) {
     tabla.innerHTML = "";
 
-    sesiones.forEach(s => {
+    sesiones.forEach((s, idx) => {
         const color = s.porcentaje_reduccion > 0 ? "text-success" : "text-danger";
 
         tabla.innerHTML += `
             <tr>
+                <td>${idx + 1}</td>
                 <td>${s.estudiante}</td>
                 <td>${s.fecha}</td>
                 <td>${s.inicial}%</td>
@@ -100,6 +101,8 @@ function promedio(arr) {
 function generarGraficos(sesiones) {
     const promedioIni = promedio(sesiones.map(s => s.inicial));
     const promedioFin = promedio(sesiones.map(s => s.final));
+    const etiquetasSesiones = sesiones.map((s, i) => `#${i+1} ${s.estudiante}`);
+    const reducciones = sesiones.map(s => s.porcentaje_reduccion);
 
     // --- Gráfico de Barras ---
     const ctx1 = document.getElementById("graficoFatiga").getContext("2d");
@@ -115,32 +118,42 @@ function generarGraficos(sesiones) {
                 data: [promedioIni, promedioFin],
                 backgroundColor: ["#FFC300", "#4DA3FF"]
             }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
         }
     });
 
-    // --- Gráfico Radar (valores referencias) ---
-    const ctx2 = document.getElementById("graficoRadar").getContext("2d");
+    // --- Gráfico Reducción por sesión ---
+    const ctx2 = document.getElementById("graficoReduccion").getContext("2d");
 
-    if (graficoRadar) graficoRadar.destroy();
+    if (graficoReduccion) graficoReduccion.destroy();
 
-    graficoRadar = new Chart(ctx2, {
-        type: "radar",
+    graficoReduccion = new Chart(ctx2, {
+        type: "bar",
         data: {
-            labels: ["EAR", "Parpadeos/min", "Mirada desviada", "Cierre prolongado"],
-            datasets: [
-                {
-                    label: "Inicial",
-                    borderWidth: 2,
-                    borderColor: "#FF9800",
-                    data: [0.21, 10, 20, 12]
-                },
-                {
-                    label: "Final",
-                    borderWidth: 2,
-                    borderColor: "#4DA3FF",
-                    data: [0.28, 15, 12, 5]
+            labels: etiquetasSesiones,
+            datasets: [{
+                label: "Reducción (%)",
+                data: reducciones,
+                backgroundColor: reducciones.map(val => val > 0 ? "#3FB27F" : "#E76F51")
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => value + "%"
+                    }
                 }
-            ]
+            }
         }
     });
 }

@@ -4,7 +4,11 @@ Estilos compartidos para las páginas de usuario (instrucciones y actividades)
 
 /* 1. CONFIGURACIÓN GENERAL Y DE PANTALLA */
 body {
-    background-color: #A3D9D5; /* Color base de las instrucciones */
+    background: #A3D9D5;
+    background-image:
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.26) 0, rgba(255,255,255,0) 30%),
+        radial-gradient(circle at 80% 10%, rgba(255,255,255,0.18) 0, rgba(255,255,255,0) 32%),
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.15) 0, rgba(255,255,255,0) 30%);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
     width: 100vw;
