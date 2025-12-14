@@ -1,0 +1,87 @@
+:root{
+    --azul-header:#4DA3FF;
+    --mint:#A2D9D3;
+    --beige:#FFF4D6;
+    --texto:#1A1A1A;
+}
+
+
+body{
+    background: var(--mint);
+    font-family:"Inter", sans-serif;
+    color:var(--texto);
+}
+
+.navbar-global{
+    background: var(--azul-header);
+    padding: 14px 20px;
+}
+
+.navbar-global .brand-icon{
+    font-size:1.6rem;
+    margin-right:8px;
+}
+
+.navbar-global .brand-text{
+    font-weight:600;
+    color:white;
+}
+
+.btn-logout{
+    background: #ffffff33;
+    border:1px solid #ffffff77;
+    color:white;
+    padding:6px 14px;
+    border-radius:6px;
+    transition:.2s;
+}
+
+.btn-logout:hover{
+    background:white;
+    color:black;
+}
+
+.card-box, .metric-card, .dashboard-box{
+    background: var(--beige);
+    border-radius:15px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.15);
+}
+
+.metric-card{
+    padding:25px;
+    min-height:140px;
+}
+
+.dashboard-box{
+    padding:20px;
+}
+
+.center-container {
+    display: flex;
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center;     /* Centra verticalmente si el contenedor tiene altura */
+    width: 100%;             /* Ocupa todo el ancho disponible */
+    margin-top: 30px;        /* Espacio arriba para separarlo de la tabla */
+    margin-bottom: 30px;     /* Espacio abajo */
+}
+
+/* 2. Estilo del Botón */
+.btn-actividades {
+    background-color: #3A7D8E; /* Tu color teal del proyecto */
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding: 12px 40px;      /* Más relleno para que se vea grande */
+    border: none;
+    border-radius: 50px;     /* Bordes redondeados */
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(58, 125, 142, 0.3); /* Sombra suave */
+    transition: all 0.3s ease;
+}
+
+/* Efecto Hover (al pasar el mouse) */
+.btn-actividades:hover {
+    background-color: #2a5d6b; /* Un poco más oscuro */
+    transform: translateY(-3px); /* Se eleva un poco */
+    box-shadow: 0 6px 20px rgba(58, 125, 142, 0.4);
+}
